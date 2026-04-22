@@ -2,7 +2,7 @@
 
 ## What is this project?
 
-This project is a **physiological data processing pipeline** for MRI research sessions. During an MRI scan, a recording device (ADInstruments LabChart) continuously records four physiological signals from the subject — breathing, heart rate, stimulus triggers, and MRI scanner triggers — all saved into a single `.mat` file.
+This project is a **physiological data processing pipeline** for MRI research sessions. During an MRI scan, a recording device (ADInstruments LabChart) continuously records four physiological signals from the subject: breathing, heart rate, stimulus triggers, and MRI scanner triggers. All saved into a single `.mat` file.
 
 The problem this pipeline solves: **the physiological recording runs continuously across the entire session, but the MRI data is split into separate sequences** (rest, stimulation, breathing tasks, etc.) that were acquired at different times. To analyze the physiology of each MRI sequence separately, you need to know exactly where each sequence starts and ends inside the continuous physiological recording.
 
@@ -34,7 +34,7 @@ pseudotime/
 ├── 3_parse.py                      ← Step 3 script
 │
 ├── data/                           ← YOUR INPUT DATA GOES HERE
-│   ├── 7T1911CI_07122023.mat       ← full physiological recording
+│   ├── subject.mat                 ← full physiological recording
 │   ├── pseudotime_mapping.json     ← created by Step 1
 │   ├── dicominfo_ses-01.tsv        ← DICOM scan information
 │   └── sub-..._bold.json           ← one per MRI sequence (BIDS format)
