@@ -403,7 +403,7 @@ def main():
         json_file   = sys.argv[2]
         output_file = sys.argv[3]
     else:
-        mat_file    = os.path.join(DATA_DIR,   '7T1911CI_07122023.mat')
+        mat_file    = os.path.join(DATA_DIR,   'subject_sample.mat')
         json_file   = os.path.join(DATA_DIR,   'pseudotime_mapping.json')
         output_file = os.path.join(OUTPUT_DIR, 'pseudotime_plot.png')
         print(f"No arguments supplied — using defaults:")

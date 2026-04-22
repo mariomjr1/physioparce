@@ -18,7 +18,7 @@ Or from anywhere on your computer:
 bash /path/to/pseudotime/gui/run.sh
 ```
 
-The launcher will find the Neuroimaging conda environment automatically and open the window.
+The launcher will find the your conda environmentironment automatically and open the window.
 
 ---
 
@@ -217,4 +217,4 @@ This way the window stays responsive (you can scroll, resize, etc.) while the sc
 
 ### `gui/run.sh` — the launcher
 
-Finds the Neuroimaging conda environment by looking for the Python executable at a direct filesystem path (`~/anaconda3/envs/Neuroimaging/bin/python`). This is more reliable than `conda activate`, which requires the shell to have been specially initialized. Falls back to system `python3` with a warning if the conda env is not found.
+Finds the your conda environmentironment by looking for the Python executable at a direct filesystem path (`~/anaconda3/envs/<your_env>/bin/python`). This is more reliable than `conda activate`, which requires the shell to have been specially initialized. Falls back to system `python3` with a warning if the conda env is not found.

@@ -11,18 +11,20 @@
 #          All other pseudotimes follow from real-time acquisition offsets.
 #          Existing parsed parcels are used only for verification.
 #
-# Usage: bash 1_times_acquisition.sh <test_folder> <mat_file>
-# Example: bash 1_times_acquisition.sh /path/to/data 7T1911CI_07122023.mat
+# Usage: bash 1_times_acquisition.sh <test_folder> <mat_file> [python_exe]
+# Example: bash 1_times_acquisition.sh /path/to/data subject_sample.mat
+# Optional 3rd arg: path to Python executable (defaults to python3)
 ##############################################################################
 
 if [ $# -lt 2 ]; then
-    echo "Usage: $0 <test_folder> <mat_file>"
-    echo "Example: $0 /autofs/cluster/vagabond/USERS/MARIO/Pipelines/11_csf/test2 7T1911CI_07122023.mat"
+    echo "Usage: $0 <test_folder> <mat_file> [python_exe]"
+    echo "Example: $0 /path/to/data subject_sample.mat"
     exit 1
 fi
 
 TEST_FOLDER="$1"
 MAT_FILE="$2"
+PYTHON_EXE="${3:-python3}"
 
 if [ ! -d "$TEST_FOLDER" ]; then
     echo "Error: Test folder not found: $TEST_FOLDER"
@@ -229,7 +231,8 @@ def main():
         for pname, pfile in sorted(parcels.items()):
             task = pname.rsplit('_run-', 1)[0]
             run  = pname.rsplit('_run-', 1)[1]
-            jkey = f"sub-7T1911CI071223_ses-01_task-{task}_run-{run}_bold.json"
+            # Find the matching JSON key dynamically (any subject/session prefix)
+            jkey = next((k for k in mapping if f'task-{task}_run-{run}' in k), None)
 
             if jkey not in mapping:
                 print(f"  ? {pname:30s} | no matching JSON")
@@ -284,7 +287,7 @@ if __name__ == '__main__':
 
 PYTHON_SCRIPT
 
-python3 "$TEMP_SCRIPT" "$TEST_FOLDER" "$MAT_FILE"
+"$PYTHON_EXE" "$TEMP_SCRIPT" "$TEST_FOLDER" "$MAT_FILE"
 
 echo "=========================================="
 echo "Complete!"

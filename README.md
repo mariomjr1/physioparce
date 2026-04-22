@@ -1,59 +1,62 @@
-# Pseudotime Pipeline — Documentation
+# Pseudotime Pipeline
 
-## What is this project?
-
-This project is a **physiological data processing pipeline** for MRI research sessions. During an MRI scan, a recording device (ADInstruments LabChart) continuously records four physiological signals from the subject: breathing, heart rate, stimulus triggers, and MRI scanner triggers. All saved into a single `.mat` file.
-
-The problem this pipeline solves: **the physiological recording runs continuously across the entire session, but the MRI data is split into separate sequences** (rest, stimulation, breathing tasks, etc.) that were acquired at different times. To analyze the physiology of each MRI sequence separately, you need to know exactly where each sequence starts and ends inside the continuous physiological recording.
-
-This is what **pseudotime** means: a unified time axis, anchored to the first MRI trigger detected in the recording, that allows every sequence to be located precisely within the physiological data.
+A physiological data processing pipeline for MRI research sessions.
+Aligns a continuous LabChart recording (RESP, RPIEZO, STIMTRIG, MRTRIG) to individual MRI sequences using MR-trigger–anchored pseudotime.
 
 ---
 
-## What does the pipeline do?
-
-The pipeline has three sequential steps:
+## Pipeline overview
 
 | Step | Script | What it does |
 |------|--------|-------------|
-| 1 | `1_times_acquisition.sh` | Reads the MRI triggers from the recording, finds when each sequence started, and saves a timing map |
-| 2 | `2_plot_pseudotime_quality.py` | Creates a visual overview of all 4 channels and marks when each sequence was running |
-| 3 | `3_parse.py` | Cuts the continuous recording into individual per-sequence `.mat` files, one per MRI sequence |
+| 1 | `1_times_acquisition.sh` | Detects MR triggers, computes pseudotime for each sequence, saves `pseudotime_mapping.json` |
+| 2 | `2_plot_pseudotime_quality.py` | Visualises all 4 channels with colour-coded acquisition bars |
+| 3 | `3_parse.py` | Cuts the recording into per-sequence `.mat` files and plots |
 
-All three steps can be run through a graphical interface (the GUI) or directly from the terminal.
+Run all steps through the graphical interface: `bash gui/run.sh [conda_env_name]`
 
 ---
 
-## Project folder structure
+## Quick start
+
+```bash
+# 1. Launch the GUI (replace MyEnv with your conda environment name)
+bash gui/run.sh MyEnv
+
+# 2. In the Quick Setup banner, browse to your data folder — all fields fill automatically.
+# 3. Run Step 1 → Step 2 → Step 3 in order.
+```
+
+See the full walkthrough in [documentation/gui.md](documentation/gui.md).
+
+---
+
+## Documentation
+
+| File | Contents |
+|------|----------|
+| [documentation/concepts.md](documentation/concepts.md) | Pseudotime, the 4 channels, MRI triggers, file formats |
+| [documentation/installation.md](documentation/installation.md) | Python environment setup and troubleshooting |
+| [documentation/data_folder.md](documentation/data_folder.md) | Every required file explained |
+| [documentation/step1.md](documentation/step1.md) | `1_times_acquisition.sh` — how it works |
+| [documentation/step2.md](documentation/step2.md) | `2_plot_pseudotime_quality.py` — reading the plots |
+| [documentation/step3.md](documentation/step3.md) | `3_parse.py` — output files and the unmatched log |
+| [documentation/gui.md](documentation/gui.md) | GUI walkthrough, every field explained |
+
+---
+
+## Repository layout
 
 ```
 pseudotime/
-│
-├── 1_times_acquisition.sh          ← Step 1 script
-├── 2_plot_pseudotime_quality.py    ← Step 2 script
-├── 3_parse.py                      ← Step 3 script
-│
-├── data/                           ← YOUR INPUT DATA GOES HERE
-│   ├── subject.mat                 ← full physiological recording
-│   ├── pseudotime_mapping.json     ← created by Step 1
-│   ├── dicominfo_ses-01.tsv        ← DICOM scan information
-│   └── sub-..._bold.json           ← one per MRI sequence (BIDS format)
-│
-├── parsed/                         ← OUTPUT from Step 3
-│   ├── task-rest_run-01.mat
-│   ├── task-rest_run-01.png
-│   └── plots/
-│
-├── gui/                            ← Graphical interface
-│   ├── app.py
-│   ├── runner.py
-│   └── run.sh
-│
-├── pseudotime_plot.png             ← Output from Step 2
-├── pseudotime_plot_stats.png       ← Output from Step 2
-│
-└── documentation/                  ← You are here
-    ├── README.md
+├── 1_times_acquisition.sh
+├── 2_plot_pseudotime_quality.py
+├── 3_parse.py
+├── gui/
+│   ├── app.py        ← main GUI window
+│   ├── runner.py     ← thread-safe subprocess runner
+│   └── run.sh        ← launcher (pass conda env name as argument)
+└── documentation/
     ├── concepts.md
     ├── installation.md
     ├── data_folder.md
@@ -63,26 +66,4 @@ pseudotime/
     └── gui.md
 ```
 
----
-
-## Quick start (first time)
-
-1. Read [installation.md](installation.md) to set up your Python environment
-2. Read [data_folder.md](data_folder.md) to understand what files you need and where to put them
-3. Read [concepts.md](concepts.md) if you want to understand what pseudotime means before running anything
-4. Launch the GUI: open a terminal, go to the `gui/` folder, and run `bash run.sh`
-5. Follow the step-by-step walkthrough in [gui.md](gui.md)
-
----
-
-## Documentation index
-
-| File | What it covers |
-|------|---------------|
-| [concepts.md](concepts.md) | Background — pseudotime, physiological channels, MRI triggers |
-| [installation.md](installation.md) | Setting up the Python environment |
-| [data_folder.md](data_folder.md) | What files are needed and what they contain |
-| [step1.md](step1.md) | `1_times_acquisition.sh` — computing pseudotime |
-| [step2.md](step2.md) | `2_plot_pseudotime_quality.py` — quality visualization |
-| [step3.md](step3.md) | `3_parse.py` — parsing segments |
-| [gui.md](gui.md) | The graphical interface — how to use it |
+> `data/` and `parsed/` are excluded from version control (see `.gitignore`).

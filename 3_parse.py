@@ -259,10 +259,9 @@ def main():
         start_sample = info['pseudotime_sample']
         duration_sec = durations[json_fname]
 
-        # Short output stem: drop subject/session prefix and _bold.json suffix
-        stem = (json_fname
-                .replace('_bold.json', '')
-                .replace('sub-7T1911CI071223_ses-01_', ''))
+        # Short output stem: extract task-..._run-.. regardless of subject/session prefix
+        m = re.search(r'(task-.+_run-\d+)', json_fname)
+        stem = m.group(1) if m else json_fname.replace('_bold.json', '')
 
         print(f"  {stem}")
         print(f"    pseudotime: {info['pseudotime_sec']:.3f} s  |  "

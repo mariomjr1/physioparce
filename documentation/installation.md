@@ -6,9 +6,9 @@
 |------------|---------|-------|
 | macOS | Any recent version | The pipeline was developed and tested on macOS |
 | Anaconda or Miniconda | Any | Used to manage the Python environment |
-| Conda environment | `Neuroimaging` | Must contain the packages listed below |
+| Conda environment | your conda environment | Must contain the packages listed below |
 
-### Python packages (inside the Neuroimaging environment)
+### Python packages (inside the <your_env> environment)
 
 | Package | Purpose |
 |---------|---------|
@@ -26,7 +26,7 @@
 Open a terminal and run:
 
 ```bash
-conda activate Neuroimaging
+conda activate <your_env>
 python -c "import scipy, numpy, matplotlib; print('scipy', scipy.__version__, '| numpy', numpy.__version__)"
 ```
 
@@ -44,7 +44,7 @@ If you see an error about numpy version incompatibility, see the Troubleshooting
 This pipeline's GUI launcher (`gui/run.sh`) does **not** use `conda activate` because that command requires the shell to be specially initialized. Instead, it directly uses the Python executable inside the environment folder:
 
 ```
-/Users/<your-username>/anaconda3/envs/Neuroimaging/bin/python
+/Users/<your-username>/anaconda3/envs/<your_env>/bin/python
 ```
 
 To find where your Anaconda is installed:
@@ -53,7 +53,7 @@ To find where your Anaconda is installed:
 conda info --base
 ```
 
-The Neuroimaging environment's Python will be at `<conda_base>/envs/Neuroimaging/bin/python`.
+The <your_env> environment's Python will be at `<conda_base>/envs/<your_env>/bin/python`.
 
 ---
 
@@ -64,21 +64,21 @@ The Neuroimaging environment's Python will be at `<conda_base>/envs/Neuroimaging
 This happens if numpy was accidentally upgraded to version 2.x. Fix it by downgrading:
 
 ```bash
-/path/to/anaconda3/envs/Neuroimaging/bin/pip install "numpy<2" --force-reinstall
+/path/to/anaconda3/envs/<your_env>/bin/pip install "numpy<2" --force-reinstall
 ```
 
 Then verify:
 
 ```bash
-/path/to/anaconda3/envs/Neuroimaging/bin/python -c "import scipy.io; print('ok')"
+/path/to/anaconda3/envs/<your_env>/bin/python -c "import scipy.io; print('ok')"
 ```
 
-### "Could not find conda environment: Neuroimaging"
+### "Could not find conda environment: <your_env>"
 
 This error appears in the terminal when running `run.sh` but does **not** stop the GUI — the launcher finds the Python executable directly by path, so this warning is harmless as long as the path below exists:
 
 ```
-~/anaconda3/envs/Neuroimaging/bin/python
+~/anaconda3/envs/<your_env>/bin/python
 ```
 
 ### GUI does not open
@@ -86,13 +86,13 @@ This error appears in the terminal when running `run.sh` but does **not** stop t
 Check that tkinter is available in the environment:
 
 ```bash
-/path/to/anaconda3/envs/Neuroimaging/bin/python -c "import tkinter; print('tkinter ok')"
+/path/to/anaconda3/envs/<your_env>/bin/python -c "import tkinter; print('tkinter ok')"
 ```
 
 If it fails, tkinter is not included in the conda environment. Install it with:
 
 ```bash
-conda install -n Neuroimaging tk
+conda install -n <your_env> tk
 ```
 
 ### Script not found error

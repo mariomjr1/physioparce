@@ -26,7 +26,7 @@ It does this in five stages:
 | Input | Description |
 |-------|-------------|
 | Data folder | The folder containing the `.mat` file and all BIDS JSON files |
-| MAT filename | Just the filename (not the full path), e.g. `7T1911CI_07122023.mat` |
+| MAT filename | Just the filename (not the full path), e.g. `subject_sample.mat` |
 
 ---
 
@@ -48,7 +48,7 @@ Open the GUI (`bash gui/run.sh`), go to the **"1 · Compute Pseudotime"** tab, f
 ### From the terminal
 
 ```bash
-bash 1_times_acquisition.sh /path/to/data 7T1911CI_07122023.mat
+bash 1_times_acquisition.sh /path/to/data subject_sample.mat
 ```
 
 The first argument is the full path to the data folder. The second is just the filename of the `.mat` file (not its full path — the script assumes it is inside the data folder).

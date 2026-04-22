@@ -121,11 +121,12 @@ class Console(ttk.Frame):
 class Step1Panel(ttk.Frame):
     """Compute pseudotime — wraps 1_times_acquisition.sh."""
 
-    def __init__(self, parent, console, status_var, runner, **kwargs):
+    def __init__(self, parent, console, status_var, runner, python_var, **kwargs):
         super().__init__(parent, padding=14, **kwargs)
-        self._console = console
-        self._status  = status_var
-        self._runner  = runner
+        self._console    = console
+        self._status     = status_var
+        self._runner     = runner
+        self._python_var = python_var
 
         ttk.Label(self, text="Step 1 — Compute Pseudotime",
                   font=("Helvetica", 13, "bold")).grid(
@@ -187,8 +188,9 @@ class Step1Panel(ttk.Frame):
             messagebox.showerror("Error", f"Script not found:\n{script}")
             return
 
-        mat_name = os.path.basename(mat_path)
-        cmd = ["bash", str(script), data_dir, mat_name]
+        mat_name   = os.path.basename(mat_path)
+        python_exe = self._python_var.get() or sys.executable
+        cmd = ["bash", str(script), data_dir, mat_name, python_exe]
 
         self._console.separator()
         self._console.append(
@@ -219,11 +221,12 @@ class Step1Panel(ttk.Frame):
 class Step2Panel(ttk.Frame):
     """Plot pseudotime quality — wraps 2_plot_pseudotime_quality.py."""
 
-    def __init__(self, parent, console, status_var, runner, **kwargs):
+    def __init__(self, parent, console, status_var, runner, python_var, **kwargs):
         super().__init__(parent, padding=14, **kwargs)
-        self._console = console
-        self._status  = status_var
-        self._runner  = runner
+        self._console    = console
+        self._status     = status_var
+        self._runner     = runner
+        self._python_var = python_var
 
         ttk.Label(self, text="Step 2 — Plot Quality",
                   font=("Helvetica", 13, "bold")).grid(
@@ -285,7 +288,8 @@ class Step2Panel(ttk.Frame):
             messagebox.showerror("Error", f"Script not found:\n{script}")
             return
 
-        cmd = [sys.executable, str(script), mat, js, out]
+        python_exe = self._python_var.get() or sys.executable
+        cmd = [python_exe, str(script), mat, js, out]
 
         self._console.separator()
         self._console.append("[Step 2]  python 2_plot_pseudotime_quality.py", "info")
@@ -315,11 +319,12 @@ class Step2Panel(ttk.Frame):
 class Step3Panel(ttk.Frame):
     """Parse segments — wraps 3_parse.py."""
 
-    def __init__(self, parent, console, status_var, runner, **kwargs):
+    def __init__(self, parent, console, status_var, runner, python_var, **kwargs):
         super().__init__(parent, padding=14, **kwargs)
-        self._console = console
-        self._status  = status_var
-        self._runner  = runner
+        self._console    = console
+        self._status     = status_var
+        self._runner     = runner
+        self._python_var = python_var
 
         ttk.Label(self, text="Step 3 — Parse Segments",
                   font=("Helvetica", 13, "bold")).grid(
@@ -371,7 +376,8 @@ class Step3Panel(ttk.Frame):
             messagebox.showerror("Error", f"Script not found:\n{script}")
             return
 
-        cmd = [sys.executable, str(script), data_dir, output_dir]
+        python_exe = self._python_var.get() or sys.executable
+        cmd = [python_exe, str(script), data_dir, output_dir]
 
         self._console.separator()
         self._console.append(
@@ -478,6 +484,24 @@ class App(tk.Tk):
         ttk.Button(right, text="Change…",
                    command=self._change_root).pack(side="left")
 
+        # ── Conda env / Python row ─────────────────────────────────────────
+        env_frame = ttk.Frame(self, padding=(10, 2, 10, 0))
+        env_frame.pack(fill="x")
+
+        ttk.Label(env_frame, text="Conda env:", foreground="gray").pack(side="left")
+        self._conda_env_var = tk.StringVar()
+        ttk.Entry(env_frame, textvariable=self._conda_env_var,
+                  width=16).pack(side="left", padx=(4, 2))
+        ttk.Button(env_frame, text="Apply",
+                   command=self._apply_conda_env).pack(side="left", padx=(0, 14))
+
+        ttk.Label(env_frame, text="Python executable:", foreground="gray").pack(side="left")
+        self._python_var = tk.StringVar(value=sys.executable)
+        ttk.Entry(env_frame, textvariable=self._python_var,
+                  width=38).pack(side="left", padx=(4, 2))
+        ttk.Button(env_frame, text="Browse…",
+                   command=self._browse_python).pack(side="left")
+
         ttk.Separator(self, orient="horizontal").pack(fill="x", padx=10, pady=6)
 
         # ── Notebook (steps) ───────────────────────────────────────────────
@@ -488,9 +512,9 @@ class App(tk.Tk):
         nb.pack(fill="both", padx=10, pady=(0, 4))
 
         # Create panels with placeholder console (wired below)
-        self._step1 = Step1Panel(nb, None, self._status_var, self._runner)
-        self._step2 = Step2Panel(nb, None, self._status_var, self._runner)
-        self._step3 = Step3Panel(nb, None, self._status_var, self._runner)
+        self._step1 = Step1Panel(nb, None, self._status_var, self._runner, self._python_var)
+        self._step2 = Step2Panel(nb, None, self._status_var, self._runner, self._python_var)
+        self._step3 = Step3Panel(nb, None, self._status_var, self._runner, self._python_var)
 
         nb.add(self._step1, text="  1 · Compute Pseudotime  ")
         nb.add(self._step2, text="  2 · Plot Quality  ")
@@ -525,6 +549,30 @@ class App(tk.Tk):
         ttk.Label(self, textvariable=self._status_var,
                   relief="sunken", anchor="w",
                   padding=(6, 2)).pack(fill="x", side="bottom")
+
+    def _apply_conda_env(self):
+        env = self._conda_env_var.get().strip()
+        if not env:
+            messagebox.showwarning("Conda env", "Type a conda environment name first.")
+            return
+        for base in [Path.home() / "anaconda3", Path.home() / "miniconda3",
+                     Path("/opt/anaconda3"), Path("/opt/miniconda3")]:
+            candidate = base / "envs" / env / "bin" / "python"
+            if candidate.exists():
+                self._python_var.set(str(candidate))
+                self._status_var.set(f"Python → {candidate}")
+                return
+        messagebox.showwarning(
+            "Not found",
+            f"Could not find conda environment '{env}'.\n"
+            "Check the name or browse for the Python executable manually.")
+
+    def _browse_python(self):
+        path = filedialog.askopenfilename(
+            title="Select Python executable",
+            filetypes=[("Python", "python*"), ("All files", "*.*")])
+        if path:
+            self._python_var.set(path)
 
     def _change_root(self):
         global SCRIPTS_ROOT

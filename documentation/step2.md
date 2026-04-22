@@ -16,7 +16,7 @@ Step 2 creates two image files that let you **visually verify** that the pseudot
 
 | Input | Description |
 |-------|-------------|
-| MAT file | The full physiological recording (e.g., `7T1911CI_07122023.mat`) |
+| MAT file | The full physiological recording (e.g., `subject_sample.mat`) |
 | JSON mapping | The `pseudotime_mapping.json` created by Step 1 |
 | Output image path | Where to save the main plot (e.g., `pseudotime_plot.png`) |
 
@@ -41,7 +41,7 @@ Go to the **"2 · Plot Quality"** tab, fill in the three path fields, and click 
 
 ```bash
 python 2_plot_pseudotime_quality.py \
-  /path/to/data/7T1911CI_07122023.mat \
+  /path/to/data/subject_sample.mat \
   /path/to/data/pseudotime_mapping.json \
   /path/to/output/pseudotime_plot.png
 ```

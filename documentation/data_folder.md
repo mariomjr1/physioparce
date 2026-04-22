@@ -23,7 +23,7 @@ data/
 
 ## File-by-file reference
 
-### `7T1911CI_07122023.mat` — the full physiological recording
+### `subject_sample.mat` — the full physiological recording
 
 **Required:** Yes, before Step 1  
 **Created by:** ADInstruments LabChart, exported to MATLAB format  
@@ -70,9 +70,9 @@ sub-{SubjectID}_ses-{Session}_task-{TaskName}_run-{RunNumber}_bold.json
 
 Example filenames from the dataset:
 ```
-sub-7T1911CI071223_ses-01_task-rest_run-01_bold.json
-sub-7T1911CI071223_ses-01_task-BlockStim_run-01_bold.json
-sub-7T1911CI071223_ses-01_task-FreeBreath_run-03_bold.json
+sub-{SubjectID}_ses-{Session}_task-rest_run-01_bold.json
+sub-{SubjectID}_ses-{Session}_task-BlockStim_run-01_bold.json
+sub-{SubjectID}_ses-{Session}_task-FreeBreath_run-03_bold.json
 ```
 
 The pipeline only reads one field from each file:
@@ -144,7 +144,7 @@ Example structure:
 
 ```json
 {
-  "reference_mat_file": "7T1911CI_07122023.mat",
+  "reference_mat_file": "subject_sample.mat",
   "sampling_rate": 1000,
   "anchor": {
     "sequence": "task-rest_run-01",
@@ -157,12 +157,12 @@ Example structure:
   "mrtrig_duration_sec": 5829.65,
   "total_triggers": 500,
   "pseudotime_mapping": {
-    "sub-7T1911CI071223_ses-01_task-rest_run-01_bold.json": {
+    "sub-{SubjectID}_ses-{Session}_task-rest_run-01_bold.json": {
       "acq_time": "14:34:19.827500",
       "pseudotime_sec": 1217.937,
       "pseudotime_sample": 1217937
     },
-    "sub-7T1911CI071223_ses-01_task-BlockStim_run-01_bold.json": {
+    "sub-{SubjectID}_ses-{Session}_task-BlockStim_run-01_bold.json": {
       "acq_time": "14:47:21.010000",
       "pseudotime_sec": 1999.1195,
       "pseudotime_sample": 1999120

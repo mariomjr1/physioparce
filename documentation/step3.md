@@ -153,7 +153,7 @@ A 4-panel matplotlib figure is created, saved to PNG at 120 DPI, and closed imme
 The output filename is derived from the BIDS JSON filename by removing the subject/session prefix and the `_bold.json` suffix:
 
 ```
-sub-7T1911CI071223_ses-01_task-rest_run-01_bold.json
+sub-{SubjectID}_ses-{Session}_task-rest_run-01_bold.json
                               ↓
                  task-rest_run-01
 ```
@@ -167,10 +167,10 @@ If any sequences could not be matched to the dicominfo TSV, a file called `unmat
 ```
 Sequences skipped (no dicominfo match)
 ============================================================
-sub-7T1911CI071223_ses-01_task-FreeBreath_run-01_bold.json
+sub-{SubjectID}_ses-{Session}_task-FreeBreath_run-01_bold.json
   reason: nearest dicominfo row is 12.4 s away (>5 s threshold)
 
-sub-7T1911CI071223_ses-01_task-FreeBreath_run-02_bold.json
+sub-{SubjectID}_ses-{Session}_task-FreeBreath_run-02_bold.json
   reason: nearest dicominfo row is 12.4 s away (>5 s threshold)
 ```
 
