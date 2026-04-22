@@ -395,7 +395,7 @@ def create_visualization(mat_path, json_path, output_path):
     return True
 
 DATA_DIR   = '/Users/mariomjr/Desktop/pseudotime/data'
-OUTPUT_DIR = '/Users/mariomjr/Desktop/pseudotime'
+OUTPUT_DIR = '/Users/mariomjr/Desktop/pseudotime/data/qc_images'
 
 def main():
     if len(sys.argv) >= 4:
