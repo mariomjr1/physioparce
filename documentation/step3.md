@@ -1,8 +1,8 @@
 # Step 3 — Parse Segments
 
-**Script:** `3_parse.py`  
+**Scripts:** `3_parse.py` (Classic) · `3b_parse_block1.py` (Block1)  
 **Language:** Python  
-**Run time:** Several minutes (loads the full 156 MB recording, then writes N output files)
+**Run time:** Several minutes (loads the full recording, then writes one `.mat` + one `.png` per sequence)
 
 ---
 
@@ -14,6 +14,17 @@ For each sequence it produces two output files:
 
 1. A `.mat` file containing the four channel segments
 2. A `.png` plot showing the four channels for that segment
+
+---
+
+## Choosing the right script
+
+| Your `.mat` file contains | Use this script |
+|--------------------------|----------------|
+| `data`, `datastart`, `dataend` | `3_parse.py` (Classic) |
+| `data_block1` (4 × N array) | `3b_parse_block1.py` (Block1) |
+
+Use the same format you selected for Steps 1 and 2. Select it with the **MAT file format** radio buttons in the GUI before clicking Run.
 
 ---
 
@@ -57,12 +68,18 @@ parsed/
 
 ### Via the GUI
 
-Go to the **"3 · Parse Segments"** tab, fill in the Data folder and Output folder fields, and click **▶ Run Step 3**.
+Go to the **"3 · Parse Segments"** tab, select the correct **MAT file format**, fill in the Data folder and Output folder fields, and click **▶ Run Step 3**.
 
 ### From the terminal
 
+**Classic format:**
 ```bash
 python 3_parse.py /path/to/data /path/to/parsed
+```
+
+**Block1 format:**
+```bash
+python 3b_parse_block1.py /path/to/data /path/to/parsed
 ```
 
 The first argument is the data folder. The second is the output folder. If the output folder doesn't exist it will be created.
@@ -83,6 +100,8 @@ Each segment `.mat` file contains these variables:
 | `pseudotime_sample` | int | The sample index of the start in the full recording |
 | `duration_sec` | float | How many seconds long this segment is |
 | `sampling_rate` | int | Always 1000 Hz |
+
+The output format is the same regardless of whether the input was Classic or Block1 — each segment is always saved with the four named channel arrays and the metadata fields above.
 
 To load one of these files in MATLAB or Python:
 
@@ -121,7 +140,15 @@ The title of each plot shows the sequence name, pseudotime start, and duration.
 
 ### 1. Load everything
 
-The script loads the full `.mat` recording into memory (all four channels), loads `pseudotime_mapping.json`, and loads `dicominfo_ses-01.tsv`.
+The script loads the full `.mat` recording into memory. The channel extraction differs between variants:
+
+**Classic (`3_parse.py`):**  
+Reads `data`, `datastart`, and `dataend`. Extracts each channel as `data[datastart[i]-1 : dataend[i]]`.
+
+**Block1 (`3b_parse_block1.py`):**  
+Reads `data_block1` (shape 4 × N). Extracts each channel as `data_block1[i].flatten()`.
+
+Both variants produce the same channel dictionary `{name: array}` for all downstream steps.
 
 ### 2. Match sequences to durations
 
@@ -176,7 +203,7 @@ sub-{SubjectID}_ses-{Session}_task-FreeBreath_run-02_bold.json
 
 **Why sequences might be skipped:**
 - The `dicominfo_ses-01.tsv` was generated from a different session
-- Some sequences share the same `AcquisitionTime` (e.g., multiple runs acquired simultaneously or with the same timestamp) — only the first match is used
+- Some sequences share the same `AcquisitionTime` (e.g., multiple runs acquired simultaneously)
 - The tolerance of 5 seconds is too tight for sequences with acquisition time delays
 
 ---
@@ -185,7 +212,8 @@ sub-{SubjectID}_ses-{Session}_task-FreeBreath_run-02_bold.json
 
 | Problem | Symptom | Cause |
 |---------|---------|-------|
+| Wrong format selected | "ERROR: 'data_block1' key not found" or missing `datastart` | Mismatch between selected format and actual `.mat` file |
 | All sequences skipped | Every entry in the log, empty `parsed/` folder | `dicominfo_ses-01.tsv` is missing or from a different session |
 | `.mat` file not found | "No .mat or .adicht file found" error | The data folder doesn't contain the physiological recording |
 | Short or empty segments | Arrays in the output `.mat` are shorter than expected | The sequence's pseudotime is near the end of the recording |
-| Slow run | Normal behavior | Loading 156 MB into RAM and writing 19 output files takes time |
+| Slow run | Normal behavior | Loading a large recording into RAM and writing many output files takes time |

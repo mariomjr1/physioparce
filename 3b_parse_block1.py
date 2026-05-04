@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-Script: 3_parse.py
-Purpose: Parse the .mat file into per-sequence segments using pseudotime_mapping.json.
+Script: 3b_parse_block1.py
+Purpose: Parse the .mat file (block1 format) into per-sequence segments using pseudotime_mapping.json.
+
+Block1 format: data_block1 is a (4, N) array.
+  Row 0: RESP  |  Row 1: RPIEZO  |  Row 2: STIMTRIG  |  Row 3: MRTRIG
 
 For each sequence:
   - Extracts the 4 channels (RESP, RPIEZO, STIMTRIG, MRTRIG) for that time window
@@ -84,16 +87,18 @@ def find_source_file(data_dir, mapping):
 # ── Loaders ────────────────────────────────────────────────────────────────────
 
 def load_channels(mat_path):
-    """Return dict {name: np.ndarray} for all 4 channels."""
-    mat       = sio.loadmat(mat_path)
-    data      = mat['data'].flatten()
-    datastart = mat['datastart'].flatten().astype(int)
-    dataend   = mat['dataend'].flatten().astype(int)
+    """Return dict {name: np.ndarray} for all 4 channels (block1 format)."""
+    mat = sio.loadmat(mat_path)
 
-    channels = {}
-    for i, name in enumerate(CHANNEL_NAMES):
-        channels[name] = data[datastart[i] - 1 : dataend[i]]  # MATLAB 1-indexed
-    return channels
+    if 'data_block1' not in mat:
+        print("ERROR: 'data_block1' key not found in this .mat file.")
+        print("       This file appears to be in the classic format.")
+        print("       Use 3_parse.py instead.")
+        sys.exit(1)
+
+    data_block = mat['data_block1']   # shape (4, N)
+    return {name: data_block[i].flatten()
+            for i, name in enumerate(CHANNEL_NAMES)}
 
 
 def load_mapping(json_path):
@@ -138,7 +143,7 @@ def load_durations(tsv_path, pseudotime_mapping, data_dir=None):
     (task + run number) to dicominfo rows via series_description.
 
     Matching rules:
-      - series_description substring → BIDS task name  (see _TASK_PATTERNS)
+      - series_description prefix → BIDS task name  (see _TASK_PATTERNS)
       - first occurrence of a task in TSV row order → run-01, second → run-02, …
 
     Duration priority:

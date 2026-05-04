@@ -23,15 +23,15 @@ data/
 
 ## File-by-file reference
 
-### `subject_sample.mat` — the full physiological recording
+### `subject.mat` — the full physiological recording
 
 **Required:** Yes, before Step 1  
 **Created by:** ADInstruments LabChart, exported to MATLAB format  
 **Used by:** Step 1, Step 2, Step 3
 
-This is the main data file. It contains the complete physiological recording of the entire MRI session as a MATLAB `.mat` file.
+This is the main data file. It contains the complete physiological recording of the entire MRI session as a MATLAB `.mat` file. LabChart can produce this file in two formats — **Classic** or **Block1** — depending on the software version. The pipeline supports both; choose the matching format in the GUI before running each step.
 
-Inside the file, there are three key variables:
+#### Classic format
 
 | Variable | Description |
 |----------|-------------|
@@ -39,16 +39,26 @@ Inside the file, there are three key variables:
 | `datastart` | Four integers telling where each channel starts inside `data` (1-indexed, MATLAB convention) |
 | `dataend` | Four integers telling where each channel ends inside `data` |
 
-The four channels are stored in this fixed order:
+#### Block1 format
 
-| Index | Channel | Signal |
-|-------|---------|--------|
-| 1 (first) | RESP | Respiration |
-| 2 | RPIEZO | Heartbeat (piezoelectric) |
-| 3 | STIMTRIG | Stimulus trigger TTL pulses |
-| 4 (last) | MRTRIG | MRI scanner trigger TTL pulses |
+| Variable | Description |
+|----------|-------------|
+| `data_block1` | A 2-D array of shape (4, N) — each row is one complete channel |
+| `ticktimes_block1` | Time axis in seconds at 1000 Hz |
+| `titles_block1` | Channel name strings |
+| `comtick_block1` | Sample indices of labelled event markers |
+| `comtext_block1` | Text labels for each event marker |
 
-The file is large (~156 MB) because it stores raw floating-point samples at 1000 Hz for the duration of the entire session (approximately 97 minutes in the example dataset = ~5,830,000 samples per channel).
+The four channels are stored in this fixed order in both formats:
+
+| Index / Row | Channel | Signal |
+|-------------|---------|--------|
+| 0 (row) / 1 (MATLAB) | RESP | Respiration |
+| 1 / 2 | RPIEZO | Heartbeat (piezoelectric) |
+| 2 / 3 | STIMTRIG | Stimulus trigger TTL pulses |
+| 3 / 4 | MRTRIG | MRI scanner trigger TTL pulses |
+
+The file is large because it stores raw floating-point samples at 1000 Hz for the duration of the entire session.
 
 **How to get it:** Export from ADInstruments LabChart using File → Export → MATLAB.
 
@@ -135,7 +145,7 @@ For each sequence in `pseudotime_mapping.json`, the pipeline finds the matching 
 ### `pseudotime_mapping.json` — timing map
 
 **Required:** Before Steps 2 and 3  
-**Created by:** Step 1 (`1_times_acquisition.sh`)  
+**Created by:** Step 1 (`1_times_acquisition.sh` or `1b_times_acquisition_block1.sh`)  
 **Used by:** Step 2, Step 3
 
 This file is the output of Step 1 and the input to Steps 2 and 3. It is automatically saved to the data folder when Step 1 finishes.
@@ -144,7 +154,8 @@ Example structure:
 
 ```json
 {
-  "reference_mat_file": "subject_sample.mat",
+  "reference_mat_file": "subject.mat",
+  "mat_format": "block1",
   "sampling_rate": 1000,
   "anchor": {
     "sequence": "task-rest_run-01",
@@ -176,6 +187,7 @@ Example structure:
 | Field | Meaning |
 |-------|---------|
 | `reference_mat_file` | The `.mat` filename that was used as the source |
+| `mat_format` | `"classic"` or `"block1"` — recorded by the block1 script; absent in classic-format output |
 | `sampling_rate` | Always 1000 Hz |
 | `anchor.sequence` | Always `task-rest_run-01` — the first BOLD sequence |
 | `anchor.first_trigger_sample` | The sample index of the very first MRI trigger in the MRTRIG channel |
@@ -209,8 +221,8 @@ These files are not required — Step 1 works fine without them.
 This is the original MATLAB preprocessing script that defined how the four channels are ordered inside the `.mat` file. It is kept in the data folder as documentation of the channel order. The Python pipeline uses the same channel ordering:
 
 ```matlab
-RESP    = data(datastart(1):dataend(1));
-RPIEZO  = data(datastart(2):dataend(2));
+RESP     = data(datastart(1):dataend(1));
+RPIEZO   = data(datastart(2):dataend(2));
 STIMTRIG = data(datastart(3):dataend(3));
-MRTRIG  = data(datastart(4):dataend(4));
+MRTRIG   = data(datastart(4):dataend(4));
 ```

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-Script: 2_plot_pseudotime_quality.py
-Purpose: Visualize the original .mat file with pseudotime acquisition periods labeled
+Script: 2b_plot_pseudotime_quality_block1.py
+Purpose: Visualize the original .mat file (block1 format) with pseudotime acquisition periods labeled.
+
+Block1 format: data_block1 is a (4, N) array.
+  Row 0: RESP  |  Row 1: RPIEZO  |  Row 2: STIMTRIG  |  Row 3: MRTRIG
 
 Creates a plot showing:
 1. The physiological signals from the original .mat file
@@ -29,31 +32,25 @@ def time_to_seconds(time_str):
         return None
 
 def load_mat_data(mat_path, sampling_rate=1000):
-    """Load physiological data from .mat file"""
+    """Load physiological data from a block1-format .mat file."""
     try:
         mat_data = sio.loadmat(mat_path)
 
-        if 'data' in mat_data and 'datastart' in mat_data and 'dataend' in mat_data:
-            data = mat_data['data'].flatten()
-            datastart = mat_data['datastart'].flatten().astype(int)
-            dataend = mat_data['dataend'].flatten().astype(int)
-
-            # Extract all 4 channels
-            channels = {}
-            channel_names = ['RESP', 'RPIEZO', 'STIMTRIG', 'MRTRIG']
-
-            for i, name in enumerate(channel_names):
-                if i < len(datastart) and i < len(dataend):
-                    channels[name] = data[datastart[i]-1:dataend[i]]  # MATLAB 1-indexed
-
-            # Time vector in seconds
-            max_length = max(len(ch) for ch in channels.values())
-            time_vector = np.arange(max_length) / sampling_rate
-
-            return channels, time_vector, mat_data
-        else:
-            print("ERROR: Required data not found in .mat file")
+        if 'data_block1' not in mat_data:
+            print("ERROR: 'data_block1' key not found in this .mat file.")
+            print("       This file appears to be in the classic format.")
+            print("       Use 2_plot_pseudotime_quality.py instead.")
             return None, None, None
+
+        data_block = mat_data['data_block1']   # shape (4, N)
+        channel_names = ['RESP', 'RPIEZO', 'STIMTRIG', 'MRTRIG']
+        channels = {name: data_block[i].flatten()
+                    for i, name in enumerate(channel_names)}
+
+        n_samples   = data_block.shape[1]
+        time_vector = np.arange(n_samples) / sampling_rate
+
+        return channels, time_vector, mat_data
 
     except Exception as e:
         print(f"ERROR loading .mat file: {e}")

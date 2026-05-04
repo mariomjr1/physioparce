@@ -76,9 +76,13 @@ A 10-minute session produces 10 × 60 × 1000 = 600,000 samples per channel.
 
 ---
 
-## The `.mat` file format
+## The `.mat` file formats
 
-The `.mat` file is a MATLAB data file. Inside it, the physiological data is stored as a single long array called `data` that contains all four channels concatenated together end-to-end. Two additional arrays — `datastart` and `dataend` — tell you where each channel begins and ends inside `data`.
+The `.mat` file is a MATLAB data file. LabChart can export it in two different layouts depending on the software version.
+
+### Classic format
+
+The four channels are concatenated into a single long array called `data`. Two index arrays (`datastart`, `dataend`) describe where each channel begins and ends:
 
 ```
 data[datastart[0]-1 : dataend[0]]  →  RESP channel (MATLAB uses 1-based indexing)
@@ -88,6 +92,28 @@ data[datastart[3]-1 : dataend[3]]  →  MRTRIG channel
 ```
 
 Python uses 0-based indexing, so 1 is subtracted from the MATLAB start indices.
+
+### Block1 format
+
+The four channels are stored as a single 2-D array called `data_block1` with shape **(4, N)**, where N is the number of samples. Each row is a complete channel:
+
+```
+data_block1[0]  →  RESP channel
+data_block1[1]  →  RPIEZO channel
+data_block1[2]  →  STIMTRIG channel
+data_block1[3]  →  MRTRIG channel
+```
+
+Additional variables present in block1 files:
+
+| Variable | Description |
+|----------|-------------|
+| `ticktimes_block1` | Time axis in seconds at 1000 Hz |
+| `titles_block1` | Channel name strings |
+| `comtick_block1` | Sample indices of labelled event markers |
+| `comtext_block1` | Text labels for each event marker |
+
+The pipeline scripts detect which format is present and process accordingly. The GUI provides a **MAT file format** radio selector on each step tab so you can choose the correct variant for your file.
 
 ---
 

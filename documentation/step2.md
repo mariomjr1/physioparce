@@ -1,8 +1,8 @@
 # Step 2 — Plot Pseudotime Quality
 
-**Script:** `2_plot_pseudotime_quality.py`  
+**Scripts:** `2_plot_pseudotime_quality.py` (Classic) · `2b_plot_pseudotime_quality_block1.py` (Block1)  
 **Language:** Python  
-**Run time:** 1–3 minutes (loading 156 MB and rendering large plots)
+**Run time:** 1–3 minutes (loading the recording into memory and rendering large plots)
 
 ---
 
@@ -12,11 +12,22 @@ Step 2 creates two image files that let you **visually verify** that the pseudot
 
 ---
 
+## Choosing the right script
+
+| Your `.mat` file contains | Use this script |
+|--------------------------|----------------|
+| `data`, `datastart`, `dataend` | `2_plot_pseudotime_quality.py` (Classic) |
+| `data_block1` (4 × N array) | `2b_plot_pseudotime_quality_block1.py` (Block1) |
+
+Use the same format you selected for Step 1. Select it with the **MAT file format** radio buttons in the GUI before clicking Run.
+
+---
+
 ## Inputs
 
 | Input | Description |
 |-------|-------------|
-| MAT file | The full physiological recording (e.g., `subject_sample.mat`) |
+| MAT file | The full physiological recording (e.g., `subject.mat`) |
 | JSON mapping | The `pseudotime_mapping.json` created by Step 1 |
 | Output image path | Where to save the main plot (e.g., `pseudotime_plot.png`) |
 
@@ -35,13 +46,22 @@ Step 2 creates two image files that let you **visually verify** that the pseudot
 
 ### Via the GUI
 
-Go to the **"2 · Plot Quality"** tab, fill in the three path fields, and click **▶ Run Step 2**.
+Go to the **"2 · Plot Quality"** tab, select the correct **MAT file format**, fill in the three path fields, and click **▶ Run Step 2**.
 
 ### From the terminal
 
+**Classic format:**
 ```bash
 python 2_plot_pseudotime_quality.py \
-  /path/to/data/subject_sample.mat \
+  /path/to/data/subject.mat \
+  /path/to/data/pseudotime_mapping.json \
+  /path/to/output/pseudotime_plot.png
+```
+
+**Block1 format:**
+```bash
+python 2b_plot_pseudotime_quality_block1.py \
+  /path/to/data/subject.mat \
   /path/to/data/pseudotime_mapping.json \
   /path/to/output/pseudotime_plot.png
 ```
@@ -82,7 +102,7 @@ This is a 2×2 grid of four summary panels:
 
 ### Top-left — Sequences per Task
 
-A bar chart counting how many runs exist for each task type. Useful to confirm that all sequences were found (e.g., FreeBreath should have 9 bars).
+A bar chart counting how many runs exist for each task type. Useful to confirm that all sequences were found.
 
 ### Top-right — Temporal Distribution of Acquisitions
 
@@ -108,7 +128,15 @@ A text summary including:
 
 ### Loading the data
 
-The script reads the `.mat` file using `scipy.io.loadmat`, extracts the four channels using the `datastart`/`dataend` index arrays, and creates a time vector in seconds by dividing each sample index by 1000.
+The channel extraction differs between the two script variants:
+
+**Classic (`2_plot_pseudotime_quality.py`):**  
+Reads `data`, `datastart`, and `dataend` from the `.mat` file. Extracts each channel as `data[datastart[i]-1 : dataend[i]]`.
+
+**Block1 (`2b_plot_pseudotime_quality_block1.py`):**  
+Reads `data_block1` (shape 4 × N). Extracts each channel as `data_block1[i].flatten()`. No index arrays needed.
+
+Both variants create a time vector in seconds by dividing each sample index by 1000. All subsequent plotting and statistics code is identical.
 
 ### Loading the pseudotime mapping
 
@@ -116,7 +144,7 @@ The `pseudotime_mapping.json` is parsed to get the pseudotime and `acq_time` of 
 
 ### Computing durations
 
-For each sequence, the script finds the matching row in `dicominfo_ses-01.tsv` by comparing acquisition times. It computes the duration using the `dim4 × TR` formula (or the TR × reps formula for single-slice sequences). The duration determines the width of each colored bar in the timeline.
+For each sequence, the script finds the matching row in `dicominfo_ses-01.tsv` by comparing acquisition times. It computes the duration using the `dim4 × TR` formula (or the `TR × reps` formula for single-slice sequences). The duration determines the width of each colored bar in the timeline.
 
 ### Rendering
 
@@ -128,7 +156,7 @@ All five panels of the main figure are created in a single `matplotlib` figure. 
 
 | Problem | What to check |
 |---------|--------------|
+| Wrong format selected | "ERROR: 'data_block1' key not found" — switch the MAT file format radio button |
 | Plot is blank or flat channels | The `.mat` file may not match — verify you selected the right file |
 | Timeline bars are all at the same position | `pseudotime_mapping.json` may be from a different session |
-| All bars have the same width (120 s) | `dicominfo_ses-01.tsv` was not found — the 120 s fallback is no longer used and sequences would be skipped, but if bars all look the same check the TSV path |
-| Script is slow | Normal — loading 156 MB and rendering 5 million sample plots takes 1–3 minutes |
+| Script is slow | Normal — loading a large recording and rendering millions-of-sample plots takes 1–3 minutes |

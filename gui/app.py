@@ -119,7 +119,14 @@ class Console(ttk.Frame):
 # ── Step panels ────────────────────────────────────────────────────────────────
 
 class Step1Panel(ttk.Frame):
-    """Compute pseudotime — wraps 1_times_acquisition.sh."""
+    """Compute pseudotime — wraps 1_times_acquisition.sh or 1b_times_acquisition_block1.sh."""
+
+    _SCRIPTS = {
+        "classic": ("1_times_acquisition.sh",
+                    "Classic  —  data / datastart / dataend"),
+        "block1":  ("1b_times_acquisition_block1.sh",
+                    "Block1   —  data_block1  (4 × N array)"),
+    }
 
     def __init__(self, parent, console, status_var, runner, python_var, **kwargs):
         super().__init__(parent, padding=14, **kwargs)
@@ -137,20 +144,36 @@ class Step1Panel(ttk.Frame):
                   "and computes pseudotime for every JSON sequence found "
                   "in the data folder. Outputs pseudotime_mapping.json."),
             wraplength=580, foreground="gray",
-        ).grid(row=1, column=0, sticky="w", pady=(0, 14))
+        ).grid(row=1, column=0, sticky="w", pady=(0, 10))
 
+        # ── MAT format selector ────────────────────────────────────────────
+        fmt_frame = ttk.LabelFrame(self, text="MAT file format", padding=(10, 4))
+        fmt_frame.grid(row=2, column=0, sticky="ew", pady=(0, 10))
+
+        self._fmt_var = tk.StringVar(value="classic")
+        for key, (_, label) in self._SCRIPTS.items():
+            ttk.Radiobutton(
+                fmt_frame, text=label, variable=self._fmt_var, value=key,
+                command=self._on_fmt_change,
+            ).pack(side="left", padx=(0, 20))
+
+        self._fmt_hint = ttk.Label(fmt_frame, foreground="gray",
+                                   text="script: 1_times_acquisition.sh")
+        self._fmt_hint.pack(side="left")
+
+        # ── Path rows ──────────────────────────────────────────────────────
         self.data_dir = PathRow(self, "Data folder:",
                                 mode="dir", on_change=self._autofill_mat)
         self.mat_file = PathRow(self, "MAT file:",
                                 filetypes=[("MAT files", "*.mat"), ("All", "*.*")])
 
-        self.data_dir.grid(row=2, column=0, sticky="ew", pady=3)
-        self.mat_file.grid(row=3, column=0, sticky="ew", pady=3)
+        self.data_dir.grid(row=3, column=0, sticky="ew", pady=3)
+        self.mat_file.grid(row=4, column=0, sticky="ew", pady=3)
 
-        ttk.Separator(self).grid(row=4, column=0, sticky="ew", pady=10)
+        ttk.Separator(self).grid(row=5, column=0, sticky="ew", pady=10)
 
         btn_row = ttk.Frame(self)
-        btn_row.grid(row=5, column=0, sticky="w")
+        btn_row.grid(row=6, column=0, sticky="w")
         self._run_btn = ttk.Button(btn_row, text="▶  Run Step 1",
                                    command=self._run)
         self._run_btn.pack(side="left")
@@ -159,6 +182,10 @@ class Step1Panel(ttk.Frame):
         self._progress.pack(side="left", padx=12)
 
         self.columnconfigure(0, weight=1)
+
+    def _on_fmt_change(self):
+        script_name, _ = self._SCRIPTS[self._fmt_var.get()]
+        self._fmt_hint.config(text=f"script: {script_name}")
 
     def populate(self, data_dir="", mat_file=""):
         if data_dir:  self.data_dir.set(data_dir)
@@ -183,7 +210,8 @@ class Step1Panel(ttk.Frame):
             messagebox.showerror("Error", "Select a valid .mat file.")
             return
 
-        script = SCRIPTS_ROOT / "1_times_acquisition.sh"
+        script_name, _ = self._SCRIPTS[self._fmt_var.get()]
+        script = SCRIPTS_ROOT / script_name
         if not script.exists():
             messagebox.showerror("Error", f"Script not found:\n{script}")
             return
@@ -194,7 +222,7 @@ class Step1Panel(ttk.Frame):
 
         self._console.separator()
         self._console.append(
-            f"[Step 1]  bash 1_times_acquisition.sh  {data_dir}  {mat_name}", "info")
+            f"[Step 1]  bash {script_name}  {data_dir}  {mat_name}", "info")
         self._console.separator()
 
         self._run_btn.config(state="disabled")
@@ -219,7 +247,12 @@ class Step1Panel(ttk.Frame):
 
 
 class Step2Panel(ttk.Frame):
-    """Plot pseudotime quality — wraps 2_plot_pseudotime_quality.py."""
+    """Plot pseudotime quality — wraps 2_plot_pseudotime_quality.py or block1 variant."""
+
+    _SCRIPTS = {
+        "classic": "2_plot_pseudotime_quality.py",
+        "block1":  "2b_plot_pseudotime_quality_block1.py",
+    }
 
     def __init__(self, parent, console, status_var, runner, python_var, **kwargs):
         super().__init__(parent, padding=14, **kwargs)
@@ -237,8 +270,25 @@ class Step2Panel(ttk.Frame):
                   "physiological channels (RESP, RPIEZO, STIMTRIG, MRTRIG) "
                   "with coloured acquisition-period bars overlaid."),
             wraplength=580, foreground="gray",
-        ).grid(row=1, column=0, sticky="w", pady=(0, 14))
+        ).grid(row=1, column=0, sticky="w", pady=(0, 10))
 
+        # ── MAT format selector ────────────────────────────────────────────
+        fmt_frame = ttk.LabelFrame(self, text="MAT file format", padding=(10, 4))
+        fmt_frame.grid(row=2, column=0, sticky="ew", pady=(0, 10))
+
+        self._fmt_var = tk.StringVar(value="classic")
+        for key, label in (("classic", "Classic  —  data / datastart / dataend"),
+                           ("block1",  "Block1   —  data_block1  (4 × N array)")):
+            ttk.Radiobutton(
+                fmt_frame, text=label, variable=self._fmt_var, value=key,
+                command=self._on_fmt_change,
+            ).pack(side="left", padx=(0, 20))
+
+        self._fmt_hint = ttk.Label(fmt_frame, foreground="gray",
+                                   text=f"script: {self._SCRIPTS['classic']}")
+        self._fmt_hint.pack(side="left")
+
+        # ── Path rows ──────────────────────────────────────────────────────
         self.mat_file   = PathRow(self, "MAT file:",
                                   filetypes=[("MAT files", "*.mat"), ("All", "*.*")])
         self.json_file  = PathRow(self, "Pseudotime JSON:",
@@ -246,14 +296,14 @@ class Step2Panel(ttk.Frame):
         self.output_img = PathRow(self, "Output image:", mode="save",
                                   filetypes=[("PNG", "*.png")])
 
-        self.mat_file.grid(row=2, column=0, sticky="ew", pady=3)
-        self.json_file.grid(row=3, column=0, sticky="ew", pady=3)
-        self.output_img.grid(row=4, column=0, sticky="ew", pady=3)
+        self.mat_file.grid(row=3, column=0, sticky="ew", pady=3)
+        self.json_file.grid(row=4, column=0, sticky="ew", pady=3)
+        self.output_img.grid(row=5, column=0, sticky="ew", pady=3)
 
-        ttk.Separator(self).grid(row=5, column=0, sticky="ew", pady=10)
+        ttk.Separator(self).grid(row=6, column=0, sticky="ew", pady=10)
 
         btn_row = ttk.Frame(self)
-        btn_row.grid(row=6, column=0, sticky="w")
+        btn_row.grid(row=7, column=0, sticky="w")
         self._run_btn = ttk.Button(btn_row, text="▶  Run Step 2",
                                    command=self._run)
         self._run_btn.pack(side="left")
@@ -262,6 +312,9 @@ class Step2Panel(ttk.Frame):
         self._progress.pack(side="left", padx=12)
 
         self.columnconfigure(0, weight=1)
+
+    def _on_fmt_change(self):
+        self._fmt_hint.config(text=f"script: {self._SCRIPTS[self._fmt_var.get()]}")
 
     def populate(self, mat_file="", json_file="", output_img=""):
         if mat_file:   self.mat_file.set(mat_file)
@@ -283,7 +336,8 @@ class Step2Panel(ttk.Frame):
             messagebox.showerror("Error", "Specify an output image path.")
             return
 
-        script = SCRIPTS_ROOT / "2_plot_pseudotime_quality.py"
+        script_name = self._SCRIPTS[self._fmt_var.get()]
+        script = SCRIPTS_ROOT / script_name
         if not script.exists():
             messagebox.showerror("Error", f"Script not found:\n{script}")
             return
@@ -292,7 +346,7 @@ class Step2Panel(ttk.Frame):
         cmd = [python_exe, str(script), mat, js, out]
 
         self._console.separator()
-        self._console.append("[Step 2]  python 2_plot_pseudotime_quality.py", "info")
+        self._console.append(f"[Step 2]  python {script_name}", "info")
         self._console.separator()
 
         self._run_btn.config(state="disabled")
@@ -317,7 +371,12 @@ class Step2Panel(ttk.Frame):
 
 
 class Step3Panel(ttk.Frame):
-    """Parse segments — wraps 3_parse.py."""
+    """Parse segments — wraps 3_parse.py or 3b_parse_block1.py."""
+
+    _SCRIPTS = {
+        "classic": "3_parse.py",
+        "block1":  "3b_parse_block1.py",
+    }
 
     def __init__(self, parent, console, status_var, runner, python_var, **kwargs):
         super().__init__(parent, padding=14, **kwargs)
@@ -335,18 +394,35 @@ class Step3Panel(ttk.Frame):
                   "using the pseudotime mapping. Saves each segment as a .mat "
                   "file and a 4-channel PNG plot."),
             wraplength=580, foreground="gray",
-        ).grid(row=1, column=0, sticky="w", pady=(0, 14))
+        ).grid(row=1, column=0, sticky="w", pady=(0, 10))
 
+        # ── MAT format selector ────────────────────────────────────────────
+        fmt_frame = ttk.LabelFrame(self, text="MAT file format", padding=(10, 4))
+        fmt_frame.grid(row=2, column=0, sticky="ew", pady=(0, 10))
+
+        self._fmt_var = tk.StringVar(value="classic")
+        for key, label in (("classic", "Classic  —  data / datastart / dataend"),
+                           ("block1",  "Block1   —  data_block1  (4 × N array)")):
+            ttk.Radiobutton(
+                fmt_frame, text=label, variable=self._fmt_var, value=key,
+                command=self._on_fmt_change,
+            ).pack(side="left", padx=(0, 20))
+
+        self._fmt_hint = ttk.Label(fmt_frame, foreground="gray",
+                                   text=f"script: {self._SCRIPTS['classic']}")
+        self._fmt_hint.pack(side="left")
+
+        # ── Path rows ──────────────────────────────────────────────────────
         self.data_dir   = PathRow(self, "Data folder:", mode="dir")
         self.output_dir = PathRow(self, "Output folder:", mode="dir")
 
-        self.data_dir.grid(row=2, column=0, sticky="ew", pady=3)
-        self.output_dir.grid(row=3, column=0, sticky="ew", pady=3)
+        self.data_dir.grid(row=3, column=0, sticky="ew", pady=3)
+        self.output_dir.grid(row=4, column=0, sticky="ew", pady=3)
 
-        ttk.Separator(self).grid(row=4, column=0, sticky="ew", pady=10)
+        ttk.Separator(self).grid(row=5, column=0, sticky="ew", pady=10)
 
         btn_row = ttk.Frame(self)
-        btn_row.grid(row=5, column=0, sticky="w")
+        btn_row.grid(row=6, column=0, sticky="w")
         self._run_btn = ttk.Button(btn_row, text="▶  Run Step 3",
                                    command=self._run)
         self._run_btn.pack(side="left")
@@ -355,6 +431,9 @@ class Step3Panel(ttk.Frame):
         self._progress.pack(side="left", padx=12)
 
         self.columnconfigure(0, weight=1)
+
+    def _on_fmt_change(self):
+        self._fmt_hint.config(text=f"script: {self._SCRIPTS[self._fmt_var.get()]}")
 
     def populate(self, data_dir="", output_dir=""):
         if data_dir:   self.data_dir.set(data_dir)
@@ -371,7 +450,8 @@ class Step3Panel(ttk.Frame):
             messagebox.showerror("Error", "Specify an output folder.")
             return
 
-        script = SCRIPTS_ROOT / "3_parse.py"
+        script_name = self._SCRIPTS[self._fmt_var.get()]
+        script = SCRIPTS_ROOT / script_name
         if not script.exists():
             messagebox.showerror("Error", f"Script not found:\n{script}")
             return
@@ -381,7 +461,7 @@ class Step3Panel(ttk.Frame):
 
         self._console.separator()
         self._console.append(
-            f"[Step 3]  python 3_parse.py  {data_dir}  {output_dir}", "info")
+            f"[Step 3]  python {script_name}  {data_dir}  {output_dir}", "info")
         self._console.separator()
 
         self._run_btn.config(state="disabled")
